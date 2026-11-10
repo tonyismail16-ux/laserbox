@@ -633,7 +633,7 @@ dividers, lids, cover, combinations, exports, migration, state).
 
 ## Copyright & watermark
 
-Every build shows **© <current year> Bali Craft Design. Laser Box - All rights reserved.** in the bottom-right corner of the app, and embeds the same notice in every export:
+ **© <current year> Bali Craft Design. Laser Box - All rights reserved.** 
 
 - **SVG** (sheet, single panel, kerf test): XML comment, `<metadata>` (`dc:rights`, `dc:creator`) and a visible grey `WATERMARK` layer (`#999999`) along the bottom edge of the sheet.
 - **DXF**: a `999` comment on the first line and a `WATERMARK` layer (grey) with the notice text in the bottom-left corner.
