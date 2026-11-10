@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>LaserBox Studio</title>
+<meta name="copyright" content="Bali Craft Design" />
+<meta name="author" content="Bali Craft Design" />
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+<link rel="stylesheet" href="css/studio.css" />
+<link rel="stylesheet" href="css/splash.css" />
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("lb-theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark")}catch(e){}</script>
+</head>
+<body data-view="3d">
+
+<!-- Launch splash: shows for 5 seconds, then fades out. Independent of the app scripts. -->
+<div id="splash" role="status" aria-label="Loading Laser Box">
+  <svg class="sp-mark" viewBox="0 0 100 100" aria-hidden="true">
+    <g transform="translate(50 50)">
+      <path class="edge e1" pathLength="1" d="M0-28 24.2-14v28L0 28-24.2 14v-28Z"/>
+      <path class="edge e2" pathLength="1" d="M-24.2-14 0 0l24.2-14M0 0v28"/>
+    </g>
+    <path class="beam" d="M6 50h88"/>
+    <circle class="spark" cx="50" cy="50" r="2.6"/>
+  </svg>
+  <h1 class="sp-title">Laser Box <span>Studio</span></h1>
+  <p class="sp-sub">Precision, cut to measure</p>
+  <div class="sp-load"><i></i></div>
+  <div class="sp-mark-wm" id="splashWm">&copy; 2026 Bali Craft Design. Laser Box - All rights reserved.</div>
+</div>
+<script>
+(function(){
+  var y=Math.max(2026,new Date().getFullYear()), w=document.getElementById("splashWm");
+  if(w) w.innerHTML="&copy; "+y+" Bali Craft Design. Laser Box - All rights reserved.";
+  setTimeout(function(){var s=document.getElementById("splash"); if(s&&s.parentNode) s.parentNode.removeChild(s);},5000);
+})();
+</script>
+
+
+<header class="topbar">
+  <div class="topbar-side">
+    <button id="btnToggleLeft" class="icon-btn" title="Show / hide Design sidebar" aria-label="Toggle Design sidebar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M9.5 5v14"/></svg></button>
+    <input id="projectName" class="project-name-input" value="Untitled Box" spellcheck="false" aria-label="Project name" />
+    <span id="dirtyDot" class="dirty-dot" title="Unsaved changes" hidden>●</span>
+    <span id="presetBadge" class="preset-badge" title="Box preset in use" hidden></span>
+  </div>
+
+  <div class="view-tabs" role="tablist" aria-label="View">
+    <button class="view-tab active" data-view="3d" role="tab">3D</button>
+    <button class="view-tab" data-view="2d" role="tab">Panels</button>
+    <button class="view-tab" data-view="sheet" role="tab">Sheets</button>
+  </div>
+
+  <div class="topbar-side topbar-right">
+    <div class="popover-wrap">
+      <button id="btnMenu" class="icon-btn" title="More" aria-label="More" aria-haspopup="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg></button>
+      <div id="menuMain" class="popover" hidden>
+        <button id="btnNewProject" class="menu-item" data-close title="Reset to a blank project">New Project</button>
+        <button id="btnLoadProject" class="menu-item" data-close title="Load a .json project file">Open…</button>
+        <button id="btnSaveProject" class="menu-item" data-close title="Download this project as .json">Save Project</button>
+        <div class="menu-sep"></div>
+        <div class="menu-row"><span>Units</span>
+          <div class="unit-switch" role="group" aria-label="Display units">
+            <button class="unit-btn active" data-unit="mm">mm</button>
+            <button class="unit-btn" data-unit="cm">cm</button>
+            <button class="unit-btn" data-unit="in">in</button>
+          </div>
+        </div>
+        <button id="btnTheme" class="menu-item" title="Switch light / dark"><span>Appearance</span><span id="themeLabel" class="menu-value">Dark</span></button>
+      </div>
+    </div>
+    <div class="popover-wrap">
+      <button id="btnExportMenu" class="btn btn-primary" aria-haspopup="true">Export</button>
+      <div id="menuExport" class="popover" hidden>
+        <label class="menu-row" title="Write each part's name next to it (SVG: grey guide layer, DXF: LABEL layer)"><span>Include part labels</span><input id="exportLabels" type="checkbox" checked /></label>
+        <div class="menu-sep"></div>
+        <button id="btnExportSvg" class="menu-item" data-close>Sheet as SVG</button>
+        <button id="btnExportDxf" class="menu-item" data-close>Sheet as DXF</button>
+        <div class="menu-sep"></div>
+        <button id="btnExportPanelSvg" class="menu-item" data-close>Selected panel as SVG</button>
+      </div>
+    </div>
+    <button id="btnToggleRight" class="icon-btn" title="Show / hide Inspector" aria-label="Toggle Inspector"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M14.5 5v14"/></svg></button>
+  </div>
+</header>
+
+<div class="app-shell">
+
+  <!-- ============================= DESIGN (left) ============================= -->
+  <aside class="sidebar sidebar-left" aria-label="Design">
+
+    <details class="panel-section" open>
+      <summary>Box</summary>
+      <div class="section-body">
+        <label class="field"><span>Start from</span><select id="boxPreset"><option value="">Choose a preset…</option></select></label>
+        <label class="field">
+          <span>Box type</span>
+          <select id="boxType">
+            <option value="finger6">Finger-Joint Box (6 panel)</option>
+            <option value="finger5open">Finger-Joint Box, Open Top</option>
+            <option value="basic6">Basic Box (6 panel, butt joint)</option>
+            <option value="simple4">Simple 4-Sided Frame</option>
+            <option value="slidingLid">Sliding Lid Box (cut-only, layered)</option>
+            <option value="hingedBox">Hinged Box (living or node hinge)</option>
+            <option value="shapeBox">Shaped Box (heart, star, ornament…)</option>
+            <option value="customBox">Box with Dividers / Detached Lid</option>
+          </select>
+        </label>
+        <div class="field-row">
+          <label class="field"><span>Length</span><input id="length" type="number" min="10" step="1" value="300" /></label>
+          <label class="field"><span>Width</span><input id="width" type="number" min="10" step="1" value="200" /></label>
+          <label class="field"><span>Height</span><input id="height" type="number" min="10" step="1" value="100" /></label>
+        </div>
+        <div class="field-row">
+          <label class="field"><span>Lid</span>
+            <select id="lidStyle"><option value="flat">Flat panel</option><option value="none">Open (no lid)</option></select>
+          </label>
+          <label class="field"><span>Bottom</span>
+            <select id="bottomStyle"><option value="flat">Flat panel</option><option value="none">Open (no bottom)</option></select>
+          </label>
+        </div>
+        <p class="hint">Outer dimensions — the finished box assembles to exactly Length × Width × Height.</p>
+      
+      </div>
+    </details>
+
+    <details class="panel-section" open>
+      <summary>Material</summary>
+      <div class="section-body">
+        <label class="field">
+          <span>Preset</span>
+          <select id="materialPreset"></select>
+        </label>
+        <div class="field-row">
+          <label class="field"><span>Thickness</span><input id="thickness" type="number" min="0.5" step="0.1" value="3" /></label>
+          <label class="field"><span>Color</span><input id="materialColor" type="color" value="#c69a63" /></label>
+        </div>
+      
+      </div>
+    </details>
+
+<details class="panel-section" id="shapeSection" open hidden>
+      <summary>Shape</summary>
+      <div class="section-body">
+        <label class="field"><span>Shape</span><select id="shapeType">
+          <option value="heart">Heart</option><option value="star5">Star (5 point)</option><option value="star8">Star (8 point, Islamic)</option>
+          <option value="tree">Christmas tree</option><option value="arch">Arch / mosque window</option><option value="circle">Circle / oval (bauble)</option>
+          <option value="flower">Flower (scalloped)</option><option value="hexagon">Hexagon</option><option value="octagon">Octagon</option><option value="diamond">Diamond / gem</option>
+        </select></label>
+        <div class="field-row">
+          <label class="field"><span>Wall width</span><input id="shapeWall" type="number" min="3" step="0.5" value="9" /></label>
+          <label class="field"><span>Lid clearance</span><input id="shapeLidClearance" type="number" min="0" max="2" step="0.1" value="0.3" /></label>
+        </div>
+        <label class="field"><span>Lid engraving text</span><input id="shapeEngraveText" type="text" placeholder="e.g. Eid Mubarak" /></label>
+        <p class="hint">Length × Width is the shape’s bounding box. Height is the base plus stacked wall layers, one per material thickness.</p>
+      </div>
+    </details>
+
+<details class="panel-section" id="featureSection" hidden>
+      <summary>Dividers &amp; Lid</summary>
+      <div class="section-body">
+        <label class="field"><span>Body height ± offset</span><input id="bodyHeightOffset" type="number" step="0.5" placeholder="0" /></label>
+        <p class="hint" id="bodyHeightHint">Effective body height = Height + offset. Negative makes the body shorter; the lid, dividers and bed follow.</p>
+        <hr />
+        <label class="field checkbox-field"><input id="dividersEnabled" type="checkbox" /><span>Internal dividers</span></label>
+        <div id="dividerFields">
+          <div class="field-row">
+            <label class="field"><span>Pattern</span><select id="dividerPattern"><option value="grid">Grid</option><option value="columns">Columns (split length)</option><option value="rows">Rows (split width)</option><option value="custom">Custom sizes</option></select></label>
+            <label class="field"><span>Mounting</span><select id="dividerMount"><option value="free">Removable grid</option><option value="slotted">Tabs in wall slots</option></select></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Dividers along X</span><input id="dividerCountX" type="number" min="0" step="1" value="1" /></label>
+            <label class="field"><span>Dividers along Y</span><input id="dividerCountY" type="number" min="0" step="1" value="1" /></label>
+          </div>
+          <div id="dividerCustomFields" hidden>
+            <label class="field"><span>Column widths mm (0 = remainder)</span><input id="customColumnWidths" type="text" placeholder="40,0,30" /></label>
+            <label class="field"><span>Row depths mm (0 = remainder)</span><input id="customRowDepths" type="text" placeholder="blank = none" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Height mm (blank=auto)</span><input id="dividerHeight" type="number" min="1" step="0.5" placeholder="auto" /></label>
+            <label class="field"><span>Thickness mm (blank=body)</span><input id="dividerThickness" type="number" min="0.5" step="0.1" placeholder="body" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Clearance</span><input id="dividerClearance" type="number" min="0" step="0.05" value="0.3" /></label>
+            <label class="field"><span>Slot fit</span><input id="dividerSlotFit" type="number" min="0" step="0.05" value="0.1" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Divider material</span><select id="dividerMaterialSel"></select></label>
+            <label class="field"><span>Divider kerf (blank = body)</span><input id="dividerKerf" type="number" min="0" step="0.01" placeholder="body" /></label>
+          </div>
+        </div>
+        <hr />
+        <label class="field"><span>Detached lid</span>
+          <select id="liftLidStyle">
+            <option value="none">None (fixed top / open)</option>
+            <option value="flat">Flat lift-off lid</option>
+            <option value="cap">Cap-style lid (skirt)</option>
+            <option value="inset">Inset lid (smaller lid inside a larger base)</option>
+            <option value="acrylicCover">Clear acrylic display cover</option>
+          </select>
+        </label>
+        <div id="lidFields" hidden>
+          <div class="field-row">
+            <label class="field"><span>Fit clearance (mm/side)</span><input id="liftLidClearance" type="number" min="0" step="0.05" value="0.3" /></label>
+            <label class="field" id="lidOverhangField"><span>Overhang (mm/side)</span><input id="liftLidOverhang" type="number" min="0" step="0.5" value="0" /></label>
+            <label class="field" id="lidSkirtField"><span>Skirt depth</span><input id="liftLidSkirtDepth" type="number" step="0.5" value="15" /></label>
+            <label class="field" id="lidSkirtOffsetField"><span>Skirt offset ±</span><input id="liftLidSkirtOffset" type="number" step="0.5" placeholder="0" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field" id="lidLocatorField"><span>Locator</span><select id="liftLidLocator"><option value="plug">Plug under lid</option><option value="none">None</option></select></label>
+            <label class="field" id="lidJointField"><span>Cap joint</span><select id="liftLidJoint"><option value="auto">Auto</option><option value="finger">Finger</option><option value="butt">Butt (cement)</option></select></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Lid/base thickness (blank=body)</span><input id="lidThickness" type="number" min="0.5" step="0.1" placeholder="body" /></label>
+            <label class="field"><span>Lid/base material</span><select id="lidMaterialSel"></select></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Lid kerf (mm, blank = material)</span><input id="lidKerf" type="number" min="0" step="0.01" placeholder="material" /></label>
+          </div>
+          <p class="hint" id="lidKerfHint" hidden></p>
+          <div class="field-row" id="lidInsetFields" hidden>
+            <label class="field"><span>Inset depth into base (mm, blank = rest on bed / floor)</span><input id="liftLidInsetDepth" type="number" min="1" step="0.5" value="15" placeholder="auto: rests on bed" /></label>
+            <label class="field"><span>Rise above rim</span><input id="liftLidRise" type="number" min="0" step="0.5" value="20" /></label>
+          </div>
+          <p class="hint" id="lidSkirtHint" hidden></p>
+          <label class="field"><span>Lid engraving text</span><input id="liftLidEngraveText" type="text" placeholder="optional" /></label>
+        </div>
+        <div id="coverFields" hidden>
+          <div class="field-row">
+            <label class="field"><span>Cover material</span><select id="coverMaterialSel"></select></label>
+            <label class="field"><span>Cover thickness</span><input id="coverThickness" type="number" min="0.5" step="0.1" value="3" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Cover width (blank=auto)</span><input id="coverWidth" type="number" min="1" step="1" placeholder="auto" /></label>
+            <label class="field"><span>Cover depth (blank=auto)</span><input id="coverDepth" type="number" min="1" step="1" placeholder="auto" /></label>
+            <label class="field"><span>Cover height (blank=auto)</span><input id="coverHeight" type="number" min="1" step="1" placeholder="auto" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Seat</span><select id="coverSeat"><option value="ring">Base plate + ring</option><option value="none">None</option></select></label>
+            <label class="field"><span>Seat clearance</span><input id="coverClearance" type="number" min="0" step="0.1" value="0.5" /></label>
+          </div>
+          <label class="field checkbox-field"><input id="coverSidewalls" type="checkbox" checked /><span>Acrylic sidewalls (off = flat acrylic top only)</span></label>
+        </div>
+        <hr />
+        <label class="field"><span>Export assembly</span><select id="exportAssemblySel"></select></label>
+        <button id="btnExportAsmSvg" class="btn btn-secondary btn-block">Export assembly SVG (all sheets)</button>
+        <button id="btnExportAsmDxf" class="btn btn-secondary btn-block">Export assembly DXF (all sheets)</button>
+        <p class="hint">Body, divider, lid and cover parts are nested on separate sheets per material. Fit clearances are starting points &mdash; verify with a test cut.</p>
+      </div>
+    </details>
+
+<details class="panel-section" id="slidingLidSection" hidden>
+      <summary>Sliding Lid</summary>
+      <div class="section-body">
+        <div class="field-row">
+          <label class="field"><span>Lid clearance</span><input id="lidClearance" type="number" min="0" step="0.05" value="0.2" /></label>
+          <label class="field"><span>Horizontal clearance</span><input id="horizontalClearance" type="number" min="0" step="0.05" value="0.3" /></label>
+        </div>
+        <div class="field-row">
+          <label class="field"><span>Front-lower amount (mm, blank=auto)</span><input id="frontLowerAmount" type="number" min="0" step="0.1" placeholder="auto" /></label>
+          <label class="field"><span>Rail width (mm, blank=auto)</span><input id="railWidth" type="number" min="0" step="0.5" placeholder="auto" /></label>
+        </div>
+        <label class="field"><span>Rail setback from front</span><input id="railSetbackFromFront" type="number" min="0" step="1" value="24" /></label>
+        <label class="field checkbox-field"><input id="thumbPullEnabled" type="checkbox" checked /><span>Thumb-pull cutout on lid</span></label>
+        <label class="field"><span>Thumb-pull radius</span><input id="thumbPullRadius" type="number" min="2" step="0.5" value="10" /></label>
+        <p class="hint">Runners glue to the inside of Left/Right; rails cap the channel from above. See README for the full mechanism diagram.</p>
+      </div>
+    </details>
+
+<details class="panel-section" id="hingeSection" hidden>
+      <summary>Hinge</summary>
+      <div class="section-body">
+        <div class="field-row">
+          <label class="field"><span>Hinge style</span>
+            <select id="hingeStyle"><option value="living">Living hinge</option><option value="node">Interlocking node hinge</option></select>
+          </label>
+          <label class="field"><span>Lid opening</span>
+            <select id="lidOpening"><option value="oneWay">One-way</option><option value="twoWay">Two-way (split)</option></select>
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field"><span>Hinge segments</span>
+            <select id="hingeSegments"><option value="continuous">Continuous</option><option value="segmented">Segmented</option></select>
+          </label>
+          <label class="field"><span>Segment count</span><input id="hingeSegmentCount" type="number" min="1" step="1" value="3" /></label>
+        </div>
+        <div class="field-row" id="livingHingeFields">
+          <label class="field"><span>Hinge band height</span><input id="hingeBandHeight" type="number" min="2" step="0.5" value="8" /></label>
+          <label class="field"><span>Slit pitch</span><input id="hingeSlitPitch" type="number" min="0.5" step="0.1" value="2.5" /></label>
+        </div>
+        <div class="field-row" id="nodeHingeFields" hidden>
+          <label class="field"><span>Knuckle count</span><input id="knuckleCount" type="number" min="3" step="1" value="9" /></label>
+          <label class="field"><span>Pin hole diameter</span><input id="pinHoleDiameter" type="number" min="0.5" step="0.1" value="2.0" /></label>
+        </div>
+      </div>
+    </details>
+
+<details class="panel-section" id="bedSection" hidden>
+      <summary>Inner Bed</summary>
+      <div class="section-body">
+        <label class="field checkbox-field"><input id="bedEnabled" type="checkbox" /><span>Inner bed (raised insert / false floor)</span></label>
+        <div id="bedFields" hidden>
+          <div class="field-row">
+            <label class="field"><span>Style</span><select id="bedStyle"><option value="tray">Tray (open top)</option><option value="plate">Flat plate</option></select></label>
+            <label class="field" id="bedHeightField"><span>Tray height (mm, blank = auto)</span><input id="bedHeight" type="number" min="1" step="0.5" value="20" placeholder="auto: fill to rim" /></label>
+          </div>
+          <label class="field checkbox-field" id="bedOnFloorField"><input id="bedOnFloor" type="checkbox" /><span>Rest on the box floor (no floating): elevation 0, height measured from the floor</span></label>
+          <label class="field checkbox-field" id="bedFlippedField"><input id="bedFlipped" type="checkbox" /><span>Upside down (open side down, like a raised platform)</span></label>
+          <div class="field-row">
+            <label class="field"><span>Elevation above floor</span><input id="bedElevation" type="number" min="0" step="0.5" value="0" /></label>
+            <label class="field"><span>Clearance (mm/side)</span><input id="bedClearance" type="number" min="0" step="0.1" value="0.5" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Bed thickness (blank=body)</span><input id="bedThickness" type="number" min="0.5" step="0.1" placeholder="body" /></label>
+            <label class="field"><span>Bed material</span><select id="bedMaterialSel"></select></label>
+          </div>
+          <label class="field"><span>Bed kerf (mm, blank = body)</span><input id="bedKerf" type="number" min="0" step="0.01" placeholder="body" /></label>
+          <div class="bl-editor" id="blEditor">
+            <div class="bl-title">Item layout <span class="hint" style="margin:0">drag to move · Shift-click or drag a box to select several</span></div>
+            <div class="field-row">
+              <label class="field"><span>Add item</span><select id="blAddSel"></select></label>
+              <label class="field"><span>Ready layouts</span><select id="blLayoutSel"></select></label>
+            </div>
+            <svg id="blCanvas" class="bl-canvas" tabindex="0" aria-label="Bed layout"></svg>
+            <div id="blAlign" class="bl-align">
+              <div class="bl-align-head"><span id="blSelInfo" class="hint" style="margin:0"></span><button type="button" class="btn btn-secondary" id="blSelAll" title="Ctrl/Cmd + A">Select all</button></div>
+              <div class="field-row">
+                <label class="field"><span>Align to</span><select id="blRel"><option value="selection">The selection (match each other)</option><option value="bed">The bed (box)</option></select></label>
+                <label class="field"><span>Bed edge margin (mm)</span><input id="blMargin" type="number" min="0" step="1" value="5" /></label>
+              </div>
+              <div class="bl-sub">Align</div>
+              <div class="bl-btns bl-btns6">
+                <button type="button" class="btn btn-secondary" data-act="left" title="Align left edges">&#8676; Left</button>
+                <button type="button" class="btn btn-secondary" data-act="hcenter" title="Centre horizontally (same centre line)">&#8596; Centre</button>
+                <button type="button" class="btn btn-secondary" data-act="right" title="Align right edges">Right &#8677;</button>
+                <button type="button" class="btn btn-secondary" data-act="top" title="Align top edges (same top)">&#10514; Top</button>
+                <button type="button" class="btn btn-secondary" data-act="vcenter" title="Centre vertically (same height / middle line)">&#8597; Middle</button>
+                <button type="button" class="btn btn-secondary" data-act="bottom" title="Align bottom edges">&#10515; Bottom</button>
+              </div>
+              <div class="bl-sub">Centre the group in the bed (spacing kept)</div>
+              <div class="bl-btns">
+                <button type="button" class="btn btn-secondary" data-act="ctrx" title="Centre the group left-right">&#8596; Left-right</button>
+                <button type="button" class="btn btn-secondary" data-act="ctry" title="Centre the group top-bottom">&#8597; Top-bottom</button>
+                <button type="button" class="btn btn-secondary" data-act="ctrxy" title="Centre the group on the bed centre">&#10010; Both</button>
+              </div>
+              <div class="bl-sub">Distribute</div>
+              <div class="bl-btns bl-btns4">
+                <button type="button" class="btn btn-secondary" data-act="distx" title="Equal gaps between items, left to right (3+ items, outer two stay)">Gaps &#8596;</button>
+                <button type="button" class="btn btn-secondary" data-act="disty" title="Equal gaps between items, top to bottom (3+ items, outer two stay)">Gaps &#8597;</button>
+                <button type="button" class="btn btn-secondary" data-act="spreadx" title="Spread evenly across the bed width, equal margins to the bed edges">Spread bed &#8596;</button>
+                <button type="button" class="btn btn-secondary" data-act="spready" title="Spread evenly across the bed length, equal margins to the bed edges">Spread bed &#8597;</button>
+              </div>
+              <div class="bl-sub">Arrange with an exact gap (centred in the bed)</div>
+              <div class="field-row">
+                <label class="field"><span>Gap (mm)</span><input id="blGap" type="number" min="0" step="1" value="10" /></label>
+                <label class="field"><span>Grid columns</span><input id="blCols" type="number" min="1" step="1" value="2" /></label>
+              </div>
+              <div class="bl-btns">
+                <button type="button" class="btn btn-secondary" data-act="row" title="One row, left to right">Row</button>
+                <button type="button" class="btn btn-secondary" data-act="col" title="One column, top to bottom">Column</button>
+                <button type="button" class="btn btn-secondary" data-act="grid" title="Grid in selection order">Grid</button>
+              </div>
+            </div>
+            <div id="blForm" hidden>
+              <div class="field-row">
+                <label class="field"><span>Shape</span><select id="blType"><option value="round">Round</option><option value="lamp">Lamp base + cable slot</option><option value="rect">Rectangle</option><option value="square">Square</option><option value="slot">Slot (rounded)</option><option value="acrylic">Acrylic sheet</option><option value="bottle">Bottle</option></select></label>
+                <label class="field"><span>Rotate (deg)</span><input id="blRot" type="number" step="15" value="0" /></label>
+              </div>
+              <div class="field-row">
+                <label class="field"><span id="blWLabel">Width</span><input id="blW" type="number" min="1" step="1" /></label>
+                <label class="field" id="blHField"><span id="blHLabel">Height</span><input id="blH" type="number" min="1" step="1" /></label>
+              </div>
+              <div class="field-row">
+                <label class="field"><span>Position X</span><input id="blX" type="number" step="1" /></label>
+                <label class="field"><span>Position Y</span><input id="blY" type="number" step="1" /></label>
+              </div>
+              <div class="field-row">
+                <label class="field"><span>Item height (mm, total)</span><input id="blItemH" type="number" min="0" step="5" placeholder="blank = flat / needs base" /></label>
+                <div class="field"><span>Support</span><div id="blSupport" class="hint" style="margin:6px 0 0"></div></div>
+              </div>
+              <label class="field"><span>Double layer for this item</span><select id="blSupportSel"><option value="">Auto (by item height)</option><option value="double">Always: backing patch under it</option><option value="none">Never: it stands on the box floor</option></select></label>
+              <div id="blCornerField" hidden>
+                <label class="field"><span>Corner radius (mm, 0 = sharp corners)</span><input id="blRadius" type="number" min="0" step="1" /></label>
+              </div>
+              <label class="field checkbox-field"><input id="blFinger" type="checkbox" /><span>Finger slot (notch so a fingertip can lift the item out)</span></label>
+              <div id="blFingerFields" hidden>
+                <div class="bl-dirs"><button type="button" class="btn btn-secondary" data-fdir="90">&uarr; Up</button><button type="button" class="btn btn-secondary" data-fdir="180">&larr; Left</button><button type="button" class="btn btn-secondary" data-fdir="0">Right &rarr;</button><button type="button" class="btn btn-secondary" data-fdir="270">&darr; Down</button></div>
+                <div class="field-row">
+                  <label class="field"><span>Side (deg, from item)</span><input id="blFingerAngle" type="number" step="15" /></label>
+                  <label class="field"><span>Slot width (mm)</span><input id="blFingerW" type="number" min="6" step="1" /></label>
+                </div>
+                <label class="field"><span>Reach past the pocket edge (mm)</span><input id="blFingerDepth" type="number" min="1" step="1" /></label>
+              </div>
+              <div class="field-row" id="blBottleFields" hidden>
+                <label class="field"><span>Neck width</span><input id="blNeckW" type="number" min="1" step="1" /></label>
+                <label class="field"><span>Neck length</span><input id="blNeckLen" type="number" min="1" step="1" /></label>
+              </div>
+              <div id="blCableBox" hidden>
+                <label class="field checkbox-field"><input id="blCable" type="checkbox" /><span>Cable channel (+ coil space)</span></label>
+                <div id="blCableFields" hidden>
+                  <div class="bl-dirs"><button type="button" class="btn btn-secondary" data-dir="90">&uarr; Up</button><button type="button" class="btn btn-secondary" data-dir="180">&larr; Left</button><button type="button" class="btn btn-secondary" data-dir="0">Right &rarr;</button><button type="button" class="btn btn-secondary" data-dir="270">&darr; Down</button></div>
+                  <div class="field-row">
+                    <label class="field"><span>Cable direction (deg)</span><input id="blCableAngle" type="number" step="15" /></label>
+                    <label class="field"><span id="blCableWidthLabel">Channel width</span><input id="blCableWidth" type="number" min="3" step="1" /></label>
+                  </div>
+                  <div class="field-row">
+                    <label class="field"><span id="blCableLenLabel">Channel length</span><input id="blCableLen" type="number" min="0" step="5" /></label>
+                    <label class="field"><span>Coil pocket dia (0 = none)</span><input id="blCableCoil" type="number" min="0" step="5" /></label>
+                  </div>
+                </div>
+              </div>
+              <div class="field-row">
+                <button type="button" class="btn btn-secondary" id="blCenter">Centre</button>
+                <button type="button" class="btn btn-secondary" id="blDup">Duplicate</button>
+                <button type="button" class="btn btn-secondary" id="blDel">Delete</button>
+              </div>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Pocket fit (+mm; 0 = tight)</span><input id="bedPocketFit" type="number" step="0.05" value="0.1" /></label>
+            <label class="field"><span>Grip layers (stack)</span><input id="bedLayers" type="number" min="1" max="6" step="1" value="1" /></label>
+          </div>
+          <label class="field checkbox-field"><input id="bedBacking" type="checkbox" checked /><span>Double layer: a backing patch glued under each pocket that needs support (flat / short items)</span></label>
+          <div class="field-row">
+            <label class="field"><span>Backing is larger than the pocket by (mm per side)</span><input id="bedBackingMargin" type="number" min="0" max="30" step="0.5" value="5" /></label>
+            <label class="field"><span>Tall item = rises at least (mm) above the bed top (no backing)</span><input id="bedTallItemMin" type="number" min="0" step="5" value="50" /></label>
+          </div>
+          <p class="hint">Only the pockets that need it get double layer: the hole is cut through the top plate, and a separate solid patch (same material, e.g. 3 mm + 3 mm = 6 mm there) is glued flat against the underside, a little larger than the hole so there is glue area all round. Items with no height entered, flat acrylic and hamper contents get a patch. An item at least this much taller than the bed top (e.g. a lamp base, 5 cm or more) stands on the box floor, so the plate stays single layer there and nothing is added.</p>
+          <p class="hint">Acrylic sheet: Width = sheet thickness, Height = sheet width. Grip layers glue identical plates together (Flat plate style or upside-down tray) so tall acrylic stands firmly, e.g. 3 x 3 mm = 9 mm grip. Positions are mm from the bed centre.</p>
+          <p class="hint" id="bedHint"></p>
+        </div>
+        <p class="hint">Works with every box preset. Turning it on for a plain finger-jointed box switches it to the &ldquo;Box with Dividers / Detached Lid&rdquo; type (same geometry).</p>
+      </div>
+    </details>
+
+    <details class="panel-section">
+      <summary>Fit &amp; Joints</summary>
+      <div class="section-body">
+        <div class="field-row">
+          <label class="field"><span>Kerf</span><input id="kerf" type="number" min="0" step="0.01" value="0.15" /></label>
+          <label class="field"><span>Outline</span>
+            <select id="outlineCompensation">
+              <option value="auto">Auto</option>
+              <option value="outside">Outside (grow)</option>
+              <option value="inside">Inside (shrink)</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint">Tabs widen and slots narrow by the kerf so joints come out snug after cutting.</p>
+        <button id="btnKerfTest" class="btn btn-secondary btn-block">Generate kerf calibration pattern</button>
+      
+        <hr />
+        <label class="field">
+          <span>Mode</span>
+          <select id="fingerMode">
+            <option value="count">By finger count</option>
+            <option value="width">By finger width</option>
+          </select>
+        </label>
+        <div class="field-row">
+          <label class="field" id="fingerCountField"><span>Finger count</span><input id="fingerCount" type="number" min="1" step="1" value="10" /></label>
+          <label class="field" id="fingerWidthField" hidden><span>Finger width</span><input id="fingerWidth" type="number" min="1" step="0.5" value="20" /></label>
+        </div>
+        <div class="field-row">
+          <label class="field"><span>Min width</span><input id="minFingerWidth" type="number" min="0" step="0.5" value="3" /></label>
+          <label class="field"><span>Max width</span><input id="maxFingerWidth" type="number" min="0" step="0.5" value="50" /></label>
+        </div>
+      
+      </div>
+    </details>
+
+    <details class="panel-section">
+      <summary>Sheets &amp; Machine</summary>
+      <div class="section-body">
+        <div class="field-row">
+          <label class="field"><span>Sheet width</span><input id="sheetWidth" type="number" min="50" step="10" value="600" /></label>
+          <label class="field"><span>Sheet height</span><input id="sheetHeight" type="number" min="50" step="10" value="400" /></label>
+        </div>
+        <div class="field-row">
+          <label class="field"><span>Margin</span><input id="sheetMargin" type="number" min="0" step="1" value="10" /></label>
+          <label class="field"><span>Spacing</span><input id="sheetSpacing" type="number" min="0" step="1" value="4" /></label>
+        </div>
+        <label class="field checkbox-field"><input id="allowRotation" type="checkbox" checked /><span>Allow 90° rotation</span></label>
+        <label class="field checkbox-field"><input id="groupByMaterial" type="checkbox" /><span>Separate sheets per material</span></label>
+        <p class="hint">Off: all parts share sheets to waste the least. On: each material is nested on its own sheets.</p>
+      
+        <hr />
+        <label class="field"><span>Preset</span><select id="machinePreset"></select></label>
+        <div class="field-row">
+          <label class="field"><span>Cut speed (mm/min)</span><input id="machineCutSpeed" type="number" min="1" step="10" value="600" /></label>
+          <label class="field"><span>Passes</span><input id="machinePasses" type="number" min="1" step="1" value="1" /></label>
+        </div>
+      
+      </div>
+    </details>
+
+    <details class="panel-section">
+      <summary>Advanced</summary>
+      <div class="section-body">
+        <div class="field-row">
+          <label class="field"><span>Cut color</span><input id="colorCut" type="color" value="#ff3b30" /></label>
+          <label class="field"><span>Engrave color</span><input id="colorEngrave" type="color" value="#0a7bff" /></label>
+        </div>
+        <label class="field checkbox-field"><input id="debugMode" type="checkbox" /><span>Developer / debug mode</span></label>
+        <button id="btnSavePreset" class="btn btn-secondary btn-block">Save current as preset…</button>
+        <button id="btnResetProject" class="btn btn-danger btn-block">Reset project</button>
+      
+      </div>
+    </details>
+
+  </aside>
+
+  <!-- ============================= VIEWPORT ============================= -->
+  <main class="viewport">
+    <div class="viewport-stage">
+      <div id="stage3d" class="stage-layer">
+        <canvas id="canvas3d"></canvas>
+      </div>
+      <div id="stage2d" class="stage-layer" hidden>
+        <svg id="svg2d" class="preview-svg"></svg>
+      </div>
+      <div id="stageSheet" class="stage-layer" hidden>
+        <div class="sheet-nav">
+          <button id="btnPrevSheet" class="tool-btn" aria-label="Previous sheet">‹</button>
+          <span id="sheetLabel">Sheet 1 / 1</span>
+          <button id="btnNextSheet" class="tool-btn" aria-label="Next sheet">›</button>
+        </div>
+        <svg id="svgSheet" class="preview-svg"></svg>
+      </div>
+
+      <div class="float-bar" role="toolbar" aria-label="View options">
+        <div class="viewport-tools">
+          <button id="btnExploded" class="tool-btn only-3d" title="Toggle exploded view">Exploded</button>
+          <button id="btnLiftLid" class="tool-btn only-3d" title="Lift the detached lid/cover off the body">Lift lid</button>
+          <button id="btnLabels" class="tool-btn active" title="Toggle part labels">Labels</button>
+          <button id="btnGrid" class="tool-btn active" title="Toggle grid">Grid</button>
+          <span class="tool-sep only-3d"></span>
+          <button id="btnWire" class="tool-btn only-3d" title="Wireframe (W)">Wireframe</button>
+          <button id="btnSpin" class="tool-btn only-3d" title="Auto-rotate">Spin</button>
+          <select id="viewPreset" class="tool-btn only-3d" title="Camera angle" aria-label="Camera angle"><option value="iso">Iso</option><option value="top">Top</option><option value="front">Front</option><option value="side">Side</option></select>
+          <span class="tool-sep"></span>
+          <button id="btnFit" class="tool-btn" title="Fit to screen">Fit</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================= INSPECTOR (right) ============================= -->
+  <aside class="sidebar sidebar-right" aria-label="Inspector">
+
+    <details class="panel-section" open>
+      <summary>Summary</summary>
+      <div class="section-body">
+        <dl class="stat-grid" id="statGrid"></dl>
+      </div>
+    </details>
+
+    <details class="panel-section" open>
+      <summary>Checks <span id="warnCount" class="badge">0</span></summary>
+      <div class="section-body">
+        <ul id="warningsList" class="warnings-list"></ul>
+      </div>
+    </details>
+
+    <details class="panel-section" id="selectedPanelSection" open hidden>
+      <summary>Selected: <span id="selectedPanelName">—</span></summary>
+      <div class="section-body">
+        <div id="selectedPanelDims" class="panel-dims"></div>
+
+        <div class="subsection">
+          <div class="subsection-title">Cutouts</div>
+          <ul id="cutoutList" class="mini-list"></ul>
+          <div class="field-row">
+            <select id="cutoutType">
+              <option value="circle">Circle</option>
+              <option value="rect">Rectangle</option>
+              <option value="slot">Slot</option>
+            </select>
+            <button id="btnAddCutout" class="btn btn-secondary">Add</button>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Engraving</div>
+          <ul id="engraveList" class="mini-list"></ul>
+          <div class="field-row">
+            <input id="engraveText" type="text" placeholder="Label text" value="PART" />
+            <button id="btnAddEngrave" class="btn btn-secondary">Add</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="panel-section" open>
+      <summary>Artwork</summary>
+      <div class="section-body">
+        <button id="btnUploadArtwork" class="btn btn-secondary btn-block">Add SVG / DXF…</button>
+        <input id="artworkFileInput" type="file" accept=".svg,.dxf" hidden />
+        <ul id="artworkList" class="mini-list"></ul>
+
+        <div id="artworkEditor" hidden>
+          <label class="field"><span>Face</span><select id="artworkPanel"></select></label>
+          <label class="field"><span>Operation</span>
+            <select id="artworkOperation">
+              <option value="engrave">Engrave (fill)</option>
+              <option value="cut">Cut through</option>
+              <option value="score">Score (outline)</option>
+            </select>
+          </label>
+          <div class="field-row">
+            <label class="field"><span>X</span><input id="artworkX" type="number" step="0.5" value="0" /></label>
+            <label class="field"><span>Y</span><input id="artworkY" type="number" step="0.5" value="0" /></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Scale</span><input id="artworkScale" type="number" min="0.01" step="0.05" value="1" /></label>
+            <label class="field"><span>Rotation °</span><input id="artworkRotation" type="number" step="1" value="0" /></label>
+          </div>
+          <label class="field checkbox-field"><input id="artworkMirrorX" type="checkbox" /><span>Mirror horizontally</span></label>
+          <label class="field checkbox-field"><input id="artworkMirrorY" type="checkbox" /><span>Mirror vertically</span></label>
+          <button id="btnFitArtwork" class="btn btn-secondary btn-block">Fit to face</button>
+          <button id="btnDeleteArtwork" class="btn btn-danger btn-block">Remove artwork</button>
+        </div>
+      </div>
+    </details>
+
+  </aside>
+</div>
+
+<div id="appCopyright" class="app-copyright" role="contentinfo"></div>
+
+<div id="toast" class="toast" hidden></div>
+<input id="fileImportInput" type="file" accept=".json" hidden />
+
+<!-- Vendored libraries (no CDN — works fully offline) -->
+<script src="libs/three.min.js"></script>
+<script src="libs/OrbitControls.js"></script>
+
+<!-- Branding / copyright (dynamic year) -->
+<script src="js/branding.js"></script>
+
+<!-- Geometry engine (pure, DOM-free) -->
+<script src="js/geometry/vec2.js"></script>
+<script src="js/geometry/assembly.js"></script>
+<script src="js/geometry/fingerJoint.js"></script>
+<script src="js/geometry/kerf.js"></script>
+<script src="js/geometry/panel.js"></script>
+<script src="js/geometry/boxGenerator.js"></script>
+<script src="js/geometry/sheetLayout.js"></script>
+<script src="js/geometry/kerfTest.js"></script>
+<script src="js/geometry/slidingLidBox.js"></script>
+<script src="js/geometry/hingedBox.js"></script>
+<script src="js/geometry/dividerGrid.js"></script>
+<script src="js/geometry/itemAlign.js"></script>
+<script src="js/geometry/innerBed.js"></script>
+<script src="js/geometry/displayCover.js"></script>
+<script src="js/geometry/liftOffLidBox.js"></script>
+<script src="js/geometry/customBox.js"></script>
+<script src="js/geometry/shapeBox.js"></script>
+
+<!-- Artwork import & mapping -->
+<script src="js/artwork/artworkImporter.js"></script>
+<script src="js/artwork/artworkMapper.js"></script>
+
+<!-- Validation -->
+<script src="js/validation/validator.js"></script>
+
+<!-- Export -->
+<script src="js/export/svgExporter.js"></script>
+<script src="js/export/dxfExporter.js"></script>
+<script src="js/export/assemblyExport.js"></script>
+
+<!-- State -->
+<script src="js/state/presets.js"></script>
+<script src="js/state/stateManager.js"></script>
+<script src="js/state/projectIO.js"></script>
+
+<!-- Rendering -->
+<script src="js/render/preview2d.js"></script>
+<script src="js/render/preview3d.js"></script>
+
+<!-- UI -->
+<script src="js/ui/uiController.js"></script>
+<script src="js/ui/enhance.js"></script>
+<script src="js/ui/bedLayout.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

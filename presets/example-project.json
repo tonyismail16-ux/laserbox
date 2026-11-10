@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "app": "LaserBox Studio",
+  "project": {
+    "name": "Example Storage Box",
+    "units": "mm",
+    "precision": 2,
+    "createdAt": 1789524211741
+  },
+  "params": {
+    "boxType": "finger6",
+    "length": 300,
+    "width": 200,
+    "height": 100,
+    "thickness": 3,
+    "kerf": 0.15,
+    "materialId": "ply3",
+    "materialName": "3mm Plywood",
+    "materialColor": "#c69a63",
+    "fingerMode": "count",
+    "fingerCount": 10,
+    "fingerWidth": 20,
+    "minFingerWidth": 3,
+    "maxFingerWidth": 50,
+    "outlineCompensation": "auto",
+    "lidStyle": "flat",
+    "bottomStyle": "flat"
+  },
+  "sheet": {
+    "width": 600,
+    "height": 400,
+    "margin": 10,
+    "spacing": 4,
+    "allowRotation": true
+  },
+  "machine": {
+    "id": "co2-80w",
+    "name": "CO2 Laser 80W",
+    "speedCutMmPerMin": 600,
+    "speedEngraveMmPerMin": 6000,
+    "passes": 1
+  },
+  "layerColors": {
+    "cut": "#ff3b30",
+    "engrave": "#0a7bff",
+    "score": "#2ecc71",
+    "guide": "#9aa0a6"
+  },
+  "panelOverrides": {},
+  "ui": {
+    "view": "3d",
+    "showLabels": true
+  }
+}
